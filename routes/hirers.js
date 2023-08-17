@@ -24,7 +24,7 @@ router.post('/register', async(req,res)=>{
             //return succes if user was added to db
             .then((result)=>{
                 res.send({
-                    message:"User created",
+                    message:"User created now",
                     result,
                 })
                 console.log(req.body.fname);
