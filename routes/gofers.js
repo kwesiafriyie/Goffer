@@ -1,5 +1,6 @@
 import express from 'express';
 import GoferModel from '../models/gofersdb.js';
+import ErrandModel from '../models/errandb.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -150,10 +151,93 @@ router.patch('/:goferId',async(req,res)=>{
     try{
         const updategofer = await GoferModel.updateOne({_id:req.params.goferId}, {$set:{fname:req.body.fname}});
         res.json(updategofer)
+        
+        res.send({
+          message:"User updated",
+         
+      })
     }catch(err){
         res.json({message:err})
     }
 })
+
+
+
+
+
+
+// Gofer accepts an errand
+router.patch('/accept-errand/:errandId', async (req, res) => {
+  try {
+    const token = req.header('Authorization');
+    const decodedToken = jwt.verify(token, 'RANDOM-TOKEN'); // Replace with your actual JWT secret
+
+    if (!decodedToken.goferId) {
+      return res.status(401).json({
+        message: 'Unauthorized: Gofer ID not found in token',
+      });
+    }
+
+    const goferId = decodedToken.goferId;
+    const errandId = req.params.errandId;
+
+    // Check if the errand exists and is pending
+    const errand = await ErrandModel.findById(errandId);
+    if (!errand || errand.status !== 'pending') {
+      return res.status(404).json({
+        message: 'Errand not found or not in pending state',
+      });
+    }
+
+    // Update the errand's gofer and status
+    errand.gofer = goferId;
+    errand.status = 'accepted';
+    const acceptedErrand = await errand.save();
+
+    res.json({
+      message: 'Errand accepted by gofer',
+      errand: acceptedErrand,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error accepting errand',
+      error: error.message,
+    });
+  }
+});
+
+
+
+
+
+// List all errands accepted by a gofer
+router.get('/accepted-errands', async (req, res) => {
+  try {
+    const token = req.header('Authorization');
+    const decodedToken = jwt.verify(token, 'RANDOM-TOKEN'); // Replace with your actual JWT secret
+
+    if (!decodedToken.goferId) {
+      return res.status(401).json({
+        message: 'Unauthorized: Gofer ID not found in token',
+      });
+    }
+
+    const goferId = decodedToken.goferId;
+
+    // Find all errands accepted by the gofer
+    const acceptedErrands = await ErrandModel.find({ gofer: goferId });
+    
+    res.json({
+      message: 'List of errands accepted by the gofer',
+      errands: acceptedErrands,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error listing accepted errands',
+      error: error.message,
+    });
+  }
+});
 
 
 

@@ -1,5 +1,6 @@
 import express from 'express';
 import HirerModel from '../models/hirersdb.js';
+import ErrandModel from '../models/errandb.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -149,5 +150,80 @@ router.patch('/:hirerId',async(req,res)=>{
         res.json({message:err})
     }
 })
+
+
+
+//Errand creation
+
+// Create a new errand
+// Create a new errand
+router.post('/create-errand', async (req, res) => {
+  try {
+    // Retrieve hirer information from the token
+    const token = req.header('Authorization');
+    const decodedToken = jwt.verify(token, 'RANDOM-TOKEN'); // Replace with your actual JWT secret
+
+    if (!decodedToken.hirerId) {
+      return res.status(401).json({
+        message: 'Unauthorized: Hirer ID not found in token',
+      });
+    }
+
+    const hirerId = decodedToken.hirerId;
+
+    const newErrand = new ErrandModel({
+      title: req.body.title,
+      description: req.body.description,
+      hirer: hirerId,
+    });
+
+    const savedErrand = await newErrand.save();
+
+    res.json({
+      message: 'Errand created successfully',
+      errand: savedErrand,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error creating errand',
+      error: error.message,
+    });
+  }
+});
+
+
+
+
+// List all errands created by a hirer
+router.get('/list-errands', async (req, res) => {
+  try {
+    const token = req.header('Authorization');
+    const decodedToken = jwt.verify(token, 'RANDOM-TOKEN'); // Replace with your actual JWT secret
+
+    if (!decodedToken.hirerId) {
+      return res.status(401).json({
+        message: 'Unauthorized: Hirer ID not found in token',
+      });
+    }
+
+    const hirerId = decodedToken.hirerId;
+
+    // Find all errands created by the hirer
+    const errands = await ErrandModel.find({ hirer: hirerId });
+    console.log('Errands:', errands);
+    console.log('Hirer ID from JWT:', hirerId);
+
+    res.json({
+      message: 'List of errands created by the hirer',
+      errands,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error listing errands',
+      error: error.message,
+    });
+  }
+});
+
 
 export default router;
