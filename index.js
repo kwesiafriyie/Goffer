@@ -8,6 +8,7 @@ import hirerRoutes from './routes/hirers.js'
 
 
 const app = express();
+const PORT = process.env.PORT||3000;
 dotenv.config();
 app.use(bodyParser.json());
 
@@ -37,6 +38,6 @@ app.get("/hirers", (req, res) => {
   res.send("We are hirers home now!");
 });
 
-app.listen(3000, (req, res) => {
-  console.log("running on port 3000");
+app.listen(PORT, (req, res) => {
+  console.log(`server running on port ${PORT}`);
 });
